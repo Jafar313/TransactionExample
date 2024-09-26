@@ -7,18 +7,28 @@ namespace TransactionExample
     {
         static void Main(string[] args)
         {
+            Runner.RunTest(new BeginTransactionSample());
+            Console.ReadKey();
+        }
+    }
+
+    static class Runner
+    {
+        public static void RunTest(ISample sample)
+        {
+            var connection = GetSqlConnection();
+            PrepareTestTable(connection);
+            sample.StartTest(connection);
+        }
+
+        private static string GetSqlConnection()
+        {
             var connection = new SqlConnectionStringBuilder();
             connection.DataSource = @".\sql2017";
             connection.InitialCatalog = "Chapyar_Test";
             connection.UserID = "user";
             connection.Password = "";
-
-            PrepareTestTable(connection.ConnectionString);
-
-            var testBeginTransaction = new BeginTransactionSample(connection.ConnectionString);
-            testBeginTransaction.StartTest();
-
-            Console.ReadKey();
+            return connection.ConnectionString;
         }
 
         private static void PrepareTestTable(string connectionString)
@@ -39,20 +49,17 @@ namespace TransactionExample
         }
     }
 
-    class TransactionScopeSample
+    class TransactionScopeSample : ISample
     {
-
+        public void StartTest(string connectionString)
+        {
+            throw new NotImplementedException();
+        }
     }
 
-    class BeginTransactionSample
+    class BeginTransactionSample : ISample
     {
-        private readonly string connectionString;
-        public BeginTransactionSample(string connectionString)
-        {
-            this.connectionString = connectionString;
-        }
-
-        public void StartTest()
+        public void StartTest(string connectionString)
         {
             using (var sqlcn = new SqlConnection(connectionString))
             {
@@ -81,4 +88,10 @@ namespace TransactionExample
             }
         }
     }
+
+    interface ISample
+    {
+        void StartTest(string connectionString);
+    }
 }
+
