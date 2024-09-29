@@ -7,7 +7,7 @@ namespace TransactionExample
     {
         static void Main(string[] args)
         {
-            Runner.RunTest(new BeginTransactionSample());
+            Runner.RunTest(new TransactionScopeSample());
             Console.ReadKey();
         }
     }
@@ -18,7 +18,8 @@ namespace TransactionExample
         {
             var connection = GetSqlConnection();
             PrepareTestTable(connection);
-            sample.StartTest(connection);
+            sample.StartTest(connection, out object result);
+            Console.WriteLine("========== test result: {0} rows", result);
         }
 
         private static string GetSqlConnection()
@@ -51,15 +52,30 @@ namespace TransactionExample
 
     class TransactionScopeSample : ISample
     {
-        public void StartTest(string connectionString)
+        public void StartTest(string connectionString, out object result)
         {
-            throw new NotImplementedException();
+            using (var scope = new System.Transactions.TransactionScope())
+            using (var connection = new SqlConnection(connectionString))
+            using (var command = new SqlCommand()) {
+                command.CommandText = "INSERT INTO test (id, name) VALUES (5000, 'Test BeginTransaction statement')";
+                command.Connection = connection;
+                try
+                {
+                    connection.Open();
+                    result = command.ExecuteNonQuery();
+                    scope.Complete();
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
         }
     }
 
     class BeginTransactionSample : ISample
     {
-        public void StartTest(string connectionString)
+        public void StartTest(string connectionString, out object result)
         {
             using (var sqlcn = new SqlConnection(connectionString))
             {
@@ -72,11 +88,12 @@ namespace TransactionExample
                         command.CommandText = "INSERT INTO test (id, name) VALUES (5000, 'Test BeginTransaction statement')";
                         command.Connection = sqlcn;
                         command.Transaction = transaction;
-                        command.ExecuteNonQuery();
+                        result = command.ExecuteNonQuery();
                         transaction.Commit();
                     }
                     catch (Exception e)
                     {
+                        result = 0;
                         Console.WriteLine("There is an error:\r\n {0}", e.Message);
                         transaction.Rollback();
                     }
@@ -91,7 +108,7 @@ namespace TransactionExample
 
     interface ISample
     {
-        void StartTest(string connectionString);
+        void StartTest(string connectionString, out object result);
     }
 }
 
