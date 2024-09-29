@@ -61,6 +61,14 @@ namespace TransactionExample
                 command.Connection = connection;
                 try
                 {
+
+                    Console.WriteLine("========= Transaction info:");
+                    Console.WriteLine();
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("\tLocal identifier: {0}, Status: {1}", System.Transactions.Transaction.Current.TransactionInformation.LocalIdentifier, System.Transactions.Transaction.Current.TransactionInformation.Status);
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.WriteLine();
+
                     connection.Open();
                     result = command.ExecuteNonQuery();
                     scope.Complete();
